@@ -1,0 +1,4 @@
+method,learning_rate,distillation_weight,pruning_amount,best_recall_at_1,parameters,flops,checkpoint
+part_b_teacher,,,,0.87,34176,2064448,C:\Users\Marouan\Documents\GitHub\ANN-Final-Project\src\checkpoints\part_b_separable_cnn_triplet.pt
+global_l1_pruning,0.01,,0.25,0.851,25632.0,2064448,
+knowledge_distillation,0.02,0.9,,0.8285,10448,630816,C:\Users\Marouan\Documents\GitHub\ANN-Final-Project\src\checkpoints\part_c_distilled_compact_separable_cnn.pt

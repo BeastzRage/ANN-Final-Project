@@ -1,0 +1,266 @@
+{
+  "best_result": {
+    "selected_backbone": "separable_cnn",
+    "embedding_dim": 32,
+    "learning_rate": 0.001,
+    "loss": "triplet",
+    "best_epoch": 8,
+    "best_recall_at_1": 0.87,
+    "checkpoint": "C:\\Users\\Marouan\\Documents\\GitHub\\ANN-Final-Project\\src\\checkpoints\\part_b_separable_cnn_triplet.pt",
+    "history": [
+      {
+        "epoch": 1,
+        "learning_rate": 0.001,
+        "train_loss": 0.11005848442316055,
+        "recall_at_1": 0.8595
+      },
+      {
+        "epoch": 2,
+        "learning_rate": 0.001,
+        "train_loss": 0.07257809836268425,
+        "recall_at_1": 0.8565
+      },
+      {
+        "epoch": 3,
+        "learning_rate": 0.001,
+        "train_loss": 0.06186314694285393,
+        "recall_at_1": 0.861
+      },
+      {
+        "epoch": 4,
+        "learning_rate": 0.001,
+        "train_loss": 0.05362251042723656,
+        "recall_at_1": 0.8565
+      },
+      {
+        "epoch": 5,
+        "learning_rate": 0.001,
+        "train_loss": 0.04612479318976402,
+        "recall_at_1": 0.8625
+      },
+      {
+        "epoch": 6,
+        "learning_rate": 0.001,
+        "train_loss": 0.04230789472460747,
+        "recall_at_1": 0.864
+      },
+      {
+        "epoch": 7,
+        "learning_rate": 0.001,
+        "train_loss": 0.03762182114124298,
+        "recall_at_1": 0.861
+      },
+      {
+        "epoch": 8,
+        "learning_rate": 0.001,
+        "train_loss": 0.03452384817004204,
+        "recall_at_1": 0.87
+      },
+      {
+        "epoch": 9,
+        "learning_rate": 0.001,
+        "train_loss": 0.029378043001890182,
+        "recall_at_1": 0.86
+      },
+      {
+        "epoch": 10,
+        "learning_rate": 0.001,
+        "train_loss": 0.026795381313562395,
+        "recall_at_1": 0.8565
+      },
+      {
+        "epoch": 11,
+        "learning_rate": 0.001,
+        "train_loss": 0.025798544961214066,
+        "recall_at_1": 0.8645
+      },
+      {
+        "epoch": 12,
+        "learning_rate": 0.001,
+        "train_loss": 0.0228803164601326,
+        "recall_at_1": 0.8615
+      },
+      {
+        "epoch": 13,
+        "learning_rate": 0.001,
+        "train_loss": 0.020597488576173783,
+        "recall_at_1": 0.8635
+      },
+      {
+        "epoch": 14,
+        "learning_rate": 0.001,
+        "train_loss": 0.01926477869153023,
+        "recall_at_1": 0.8635
+      },
+      {
+        "epoch": 15,
+        "learning_rate": 0.001,
+        "train_loss": 0.016153633677959443,
+        "recall_at_1": 0.858
+      },
+      {
+        "epoch": 16,
+        "learning_rate": 0.001,
+        "train_loss": 0.015972485774755477,
+        "recall_at_1": 0.858
+      },
+      {
+        "epoch": 17,
+        "learning_rate": 0.001,
+        "train_loss": 0.01426299450993538,
+        "recall_at_1": 0.8625
+      },
+      {
+        "epoch": 18,
+        "learning_rate": 0.001,
+        "train_loss": 0.01325349508523941,
+        "recall_at_1": 0.8525
+      },
+      {
+        "epoch": 19,
+        "learning_rate": 0.001,
+        "train_loss": 0.01154645358324051,
+        "recall_at_1": 0.8555
+      },
+      {
+        "epoch": 20,
+        "learning_rate": 0.001,
+        "train_loss": 0.011312242293357849,
+        "recall_at_1": 0.863
+      }
+    ]
+  },
+  "all_results": [
+    {
+      "selected_backbone": "separable_cnn",
+      "embedding_dim": 32,
+      "learning_rate": 0.001,
+      "loss": "triplet",
+      "best_epoch": 8,
+      "best_recall_at_1": 0.87,
+      "checkpoint": "C:\\Users\\Marouan\\Documents\\GitHub\\ANN-Final-Project\\src\\checkpoints\\part_b_separable_cnn_triplet.pt",
+      "history": [
+        {
+          "epoch": 1,
+          "learning_rate": 0.001,
+          "train_loss": 0.11005848442316055,
+          "recall_at_1": 0.8595
+        },
+        {
+          "epoch": 2,
+          "learning_rate": 0.001,
+          "train_loss": 0.07257809836268425,
+          "recall_at_1": 0.8565
+        },
+        {
+          "epoch": 3,
+          "learning_rate": 0.001,
+          "train_loss": 0.06186314694285393,
+          "recall_at_1": 0.861
+        },
+        {
+          "epoch": 4,
+          "learning_rate": 0.001,
+          "train_loss": 0.05362251042723656,
+          "recall_at_1": 0.8565
+        },
+        {
+          "epoch": 5,
+          "learning_rate": 0.001,
+          "train_loss": 0.04612479318976402,
+          "recall_at_1": 0.8625
+        },
+        {
+          "epoch": 6,
+          "learning_rate": 0.001,
+          "train_loss": 0.04230789472460747,
+          "recall_at_1": 0.864
+        },
+        {
+          "epoch": 7,
+          "learning_rate": 0.001,
+          "train_loss": 0.03762182114124298,
+          "recall_at_1": 0.861
+        },
+        {
+          "epoch": 8,
+          "learning_rate": 0.001,
+          "train_loss": 0.03452384817004204,
+          "recall_at_1": 0.87
+        },
+        {
+          "epoch": 9,
+          "learning_rate": 0.001,
+          "train_loss": 0.029378043001890182,
+          "recall_at_1": 0.86
+        },
+        {
+          "epoch": 10,
+          "learning_rate": 0.001,
+          "train_loss": 0.026795381313562395,
+          "recall_at_1": 0.8565
+        },
+        {
+          "epoch": 11,
+          "learning_rate": 0.001,
+          "train_loss": 0.025798544961214066,
+          "recall_at_1": 0.8645
+        },
+        {
+          "epoch": 12,
+          "learning_rate": 0.001,
+          "train_loss": 0.0228803164601326,
+          "recall_at_1": 0.8615
+        },
+        {
+          "epoch": 13,
+          "learning_rate": 0.001,
+          "train_loss": 0.020597488576173783,
+          "recall_at_1": 0.8635
+        },
+        {
+          "epoch": 14,
+          "learning_rate": 0.001,
+          "train_loss": 0.01926477869153023,
+          "recall_at_1": 0.8635
+        },
+        {
+          "epoch": 15,
+          "learning_rate": 0.001,
+          "train_loss": 0.016153633677959443,
+          "recall_at_1": 0.858
+        },
+        {
+          "epoch": 16,
+          "learning_rate": 0.001,
+          "train_loss": 0.015972485774755477,
+          "recall_at_1": 0.858
+        },
+        {
+          "epoch": 17,
+          "learning_rate": 0.001,
+          "train_loss": 0.01426299450993538,
+          "recall_at_1": 0.8625
+        },
+        {
+          "epoch": 18,
+          "learning_rate": 0.001,
+          "train_loss": 0.01325349508523941,
+          "recall_at_1": 0.8525
+        },
+        {
+          "epoch": 19,
+          "learning_rate": 0.001,
+          "train_loss": 0.01154645358324051,
+          "recall_at_1": 0.8555
+        },
+        {
+          "epoch": 20,
+          "learning_rate": 0.001,
+          "train_loss": 0.011312242293357849,
+          "recall_at_1": 0.863
+        }
+      ]
+    }
+  ]
+}

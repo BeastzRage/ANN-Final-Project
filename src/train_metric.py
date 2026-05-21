@@ -3,6 +3,7 @@ Part B: fine-tune the selected Part A model for image retrieval.
 """
 
 import csv
+import copy
 import json
 import random
 from pathlib import Path
@@ -19,7 +20,7 @@ from models import build_model
 SELECTED_BACKBONE = "separable_cnn"
 EMBEDDING_DIM = 32
 EPOCHS = 20
-LEARNING_RATE = 0.0001
+LEARNING_RATES = [0.001] # best value found after testing [0.001, 0.005,0.01, 0.02, 0.03, 0.04, 0.05]
 TRIPLET_MARGIN = 1.0
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -134,29 +135,113 @@ def evaluate_retrieval(
     return recall_at_1(embeddings, labels)
 
 
-def save_results(history: list[dict], best_recall: float, best_epoch: int) -> None:
+def train_for_learning_rate(
+    learning_rate: float,
+    train_loader: torch.utils.data.DataLoader,
+    eval_loader: torch.utils.data.DataLoader,
+    device: torch.device,
+) -> dict:
+    model = build_model(SELECTED_BACKBONE, embedding_dim=EMBEDDING_DIM).to(device)
+    load_part_a_weights(model, PART_A_CHECKPOINT, device)
+
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    best_recall = 0.0
+    best_epoch = 0
+    best_state = copy.deepcopy(model.state_dict())
+    history = []
+
+    print(f"\nTraining retrieval model with learning rate {learning_rate}")
+
+    for epoch in range(1, EPOCHS + 1):
+        train_loss = train_one_epoch(model, train_loader, optimizer, device)
+        recall = evaluate_retrieval(model, eval_loader, device)
+
+        history.append(
+            {
+                "epoch": epoch,
+                "learning_rate": learning_rate,
+                "train_loss": train_loss,
+                "recall_at_1": recall,
+            }
+        )
+
+        print(f"Epoch {epoch:02d}/{EPOCHS} | train loss {train_loss:.4f} | Recall@1 {recall:.4f}")
+
+        if recall > best_recall:
+            best_recall = recall
+            best_epoch = epoch
+            best_state = copy.deepcopy(model.state_dict())
+
+    return {
+        "selected_backbone": SELECTED_BACKBONE,
+        "embedding_dim": EMBEDDING_DIM,
+        "learning_rate": learning_rate,
+        "loss": "triplet",
+        "best_epoch": best_epoch,
+        "best_recall_at_1": best_recall,
+        "checkpoint": "",
+        "model_state_dict": best_state,
+        "history": history,
+    }
+
+
+def save_best_checkpoint(best_result: dict) -> None:
+    torch.save(
+        {
+            "model_name": SELECTED_BACKBONE,
+            "embedding_dim": EMBEDDING_DIM,
+            "learning_rate": best_result["learning_rate"],
+            "loss": "triplet",
+            "model_state_dict": best_result["model_state_dict"],
+            "recall_at_1": best_result["best_recall_at_1"],
+            "epoch": best_result["best_epoch"],
+        },
+        PART_B_CHECKPOINT,
+    )
+    best_result["checkpoint"] = str(PART_B_CHECKPOINT)
+
+
+def save_results(results: list[dict], best_result: dict) -> None:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
     json_path = RESULTS_DIR / "part_b_results.json"
     csv_path = RESULTS_DIR / "part_b_results.csv"
 
-    result = {
-        "selected_backbone": SELECTED_BACKBONE,
-        "embedding_dim": EMBEDDING_DIM,
-        "loss": "triplet",
-        "best_epoch": best_epoch,
-        "best_recall_at_1": best_recall,
-        "checkpoint": str(PART_B_CHECKPOINT),
-        "history": history,
-    }
+    results_for_json = []
+    for result in results:
+        result_copy = result.copy()
+        result_copy.pop("model_state_dict")
+        results_for_json.append(result_copy)
+
+    best_result_for_json = best_result.copy()
+    best_result_for_json.pop("model_state_dict")
 
     with json_path.open("w", encoding="utf-8") as file:
-        json.dump(result, file, indent=2)
+        json.dump(
+            {
+                "best_result": best_result_for_json,
+                "all_results": results_for_json,
+            },
+            file,
+            indent=2,
+        )
 
     with csv_path.open("w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=["epoch", "train_loss", "recall_at_1"])
+        writer = csv.DictWriter(
+            file,
+            fieldnames=["learning_rate", "best_epoch", "best_recall_at_1", "checkpoint"],
+        )
         writer.writeheader()
-        writer.writerows(history)
+        for result in results:
+            writer.writerow(
+                {
+                    "learning_rate": result["learning_rate"],
+                    "best_epoch": result["best_epoch"],
+                    "best_recall_at_1": result["best_recall_at_1"],
+                    "checkpoint": result["checkpoint"],
+                }
+            )
 
     print(f"\nSaved Part B results to {csv_path}")
     print(f"Saved full Part B history to {json_path}")
@@ -169,48 +254,20 @@ def main() -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    model = build_model(SELECTED_BACKBONE, embedding_dim=EMBEDDING_DIM).to(device)
-    load_part_a_weights(model, PART_A_CHECKPOINT, device)
-
     train_loader = get_metric_dataloader(loss_name="triplet", batch_size=METRIC_BATCH_SIZE)
     eval_loader = get_retrieval_eval_dataloader()
-    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
-    best_recall = 0.0
-    best_epoch = 0
-    history = []
+    results = []
+    for learning_rate in LEARNING_RATES:
+        result = train_for_learning_rate(learning_rate, train_loader, eval_loader, device)
+        results.append(result)
 
-    for epoch in range(1, EPOCHS + 1):
-        train_loss = train_one_epoch(model, train_loader, optimizer, device)
-        recall = evaluate_retrieval(model, eval_loader, device)
+    best_result = max(results, key=lambda item: item["best_recall_at_1"])
+    save_best_checkpoint(best_result)
 
-        history.append(
-            {
-                "epoch": epoch,
-                "train_loss": train_loss,
-                "recall_at_1": recall,
-            }
-        )
-
-        print(f"Epoch {epoch:02d}/{EPOCHS} | train loss {train_loss:.4f} | Recall@1 {recall:.4f}")
-
-        if recall > best_recall:
-            best_recall = recall
-            best_epoch = epoch
-            torch.save(
-                {
-                    "model_name": SELECTED_BACKBONE,
-                    "embedding_dim": EMBEDDING_DIM,
-                    "loss": "triplet",
-                    "model_state_dict": model.state_dict(),
-                    "recall_at_1": recall,
-                    "epoch": epoch,
-                },
-                PART_B_CHECKPOINT,
-            )
-
-    save_results(history, best_recall, best_epoch)
-    print(f"\nBest Recall@1: {best_recall:.4f} at epoch {best_epoch}")
+    save_results(results, best_result)
+    print(f"\nBest Recall@1: {best_result['best_recall_at_1']:.4f} at epoch {best_result['best_epoch']}")
+    print(f"Best learning rate: {best_result['learning_rate']}")
     print(f"Saved best retrieval checkpoint to {PART_B_CHECKPOINT}")
 
 

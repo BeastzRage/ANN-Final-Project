@@ -1,0 +1,2 @@
+learning_rate,best_epoch,best_recall_at_1,checkpoint
+0.001,8,0.87,C:\Users\Marouan\Documents\GitHub\ANN-Final-Project\src\checkpoints\part_b_separable_cnn_triplet.pt

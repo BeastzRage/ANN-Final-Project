@@ -1,0 +1,225 @@
+[
+  {
+    "method": "part_b_teacher",
+    "checkpoint": "C:\\Users\\Marouan\\Documents\\GitHub\\ANN-Final-Project\\src\\checkpoints\\part_b_separable_cnn_triplet.pt",
+    "best_recall_at_1": 0.87,
+    "parameters": 34176,
+    "flops": 2064448,
+    "history": []
+  },
+  {
+    "method": "global_l1_pruning",
+    "checkpoint": "",
+    "learning_rate": 0.01,
+    "pruning_amount": 0.25,
+    "recall_before_finetune": 0.807,
+    "best_recall_at_1": 0.851,
+    "parameters": 25632.0,
+    "flops": 2064448,
+    "history": [
+      {
+        "epoch": 1,
+        "train_loss": 0.10399746341705322,
+        "recall_at_1": 0.834
+      },
+      {
+        "epoch": 2,
+        "train_loss": 0.06911655483841896,
+        "recall_at_1": 0.8505
+      },
+      {
+        "epoch": 3,
+        "train_loss": 0.05580903781652451,
+        "recall_at_1": 0.8435
+      },
+      {
+        "epoch": 4,
+        "train_loss": 0.04832249944806099,
+        "recall_at_1": 0.851
+      },
+      {
+        "epoch": 5,
+        "train_loss": 0.042101488518714904,
+        "recall_at_1": 0.8445
+      },
+      {
+        "epoch": 6,
+        "train_loss": 0.036769823175668716,
+        "recall_at_1": 0.8475
+      },
+      {
+        "epoch": 7,
+        "train_loss": 0.033081471532583236,
+        "recall_at_1": 0.8325
+      },
+      {
+        "epoch": 8,
+        "train_loss": 0.03362099989056587,
+        "recall_at_1": 0.844
+      },
+      {
+        "epoch": 9,
+        "train_loss": 0.027524643391370774,
+        "recall_at_1": 0.8435
+      },
+      {
+        "epoch": 10,
+        "train_loss": 0.02569173541069031,
+        "recall_at_1": 0.837
+      }
+    ]
+  },
+  {
+    "method": "knowledge_distillation",
+    "checkpoint": "C:\\Users\\Marouan\\Documents\\GitHub\\ANN-Final-Project\\src\\checkpoints\\part_c_distilled_compact_separable_cnn.pt",
+    "student_model": "compact_separable_cnn",
+    "teacher_model": "separable_cnn",
+    "learning_rate": 0.02,
+    "distillation_weight": 0.9,
+    "best_recall_at_1": 0.8285,
+    "parameters": 10448,
+    "flops": 630816,
+    "history": [
+      {
+        "epoch": 1,
+        "train_loss": 0.0560037583053112,
+        "triplet_loss": 0.2965383358836174,
+        "teacher_embedding_loss": 0.02927769390642643,
+        "recall_at_1": 0.688
+      },
+      {
+        "epoch": 2,
+        "train_loss": 0.033532177460193636,
+        "triplet_loss": 0.1897247652053833,
+        "teacher_embedding_loss": 0.016177445679903032,
+        "recall_at_1": 0.718
+      },
+      {
+        "epoch": 3,
+        "train_loss": 0.0270727770447731,
+        "triplet_loss": 0.15774523929953574,
+        "teacher_embedding_loss": 0.012553614650666714,
+        "recall_at_1": 0.7615
+      },
+      {
+        "epoch": 4,
+        "train_loss": 0.02399510802924633,
+        "triplet_loss": 0.14279462246894836,
+        "teacher_embedding_loss": 0.010795161978900432,
+        "recall_at_1": 0.7895
+      },
+      {
+        "epoch": 5,
+        "train_loss": 0.021048869478702544,
+        "triplet_loss": 0.12505697182416917,
+        "teacher_embedding_loss": 0.009492413584887982,
+        "recall_at_1": 0.795
+      },
+      {
+        "epoch": 6,
+        "train_loss": 0.019759470358490943,
+        "triplet_loss": 0.11765052735805512,
+        "teacher_embedding_loss": 0.008882686285674572,
+        "recall_at_1": 0.796
+      },
+      {
+        "epoch": 7,
+        "train_loss": 0.01869022806882858,
+        "triplet_loss": 0.11040369255542755,
+        "teacher_embedding_loss": 0.008499843154847623,
+        "recall_at_1": 0.805
+      },
+      {
+        "epoch": 8,
+        "train_loss": 0.017759168726205827,
+        "triplet_loss": 0.10532392156124115,
+        "teacher_embedding_loss": 0.008029751764237881,
+        "recall_at_1": 0.8045
+      },
+      {
+        "epoch": 9,
+        "train_loss": 0.0166691118568182,
+        "triplet_loss": 0.09742431095838547,
+        "teacher_embedding_loss": 0.007696311937272549,
+        "recall_at_1": 0.8055
+      },
+      {
+        "epoch": 10,
+        "train_loss": 0.01572141987979412,
+        "triplet_loss": 0.09042708799242974,
+        "teacher_embedding_loss": 0.007420790159702301,
+        "recall_at_1": 0.8205
+      },
+      {
+        "epoch": 11,
+        "train_loss": 0.015506052303314208,
+        "triplet_loss": 0.09018993159532547,
+        "teacher_embedding_loss": 0.007207843440771103,
+        "recall_at_1": 0.8065
+      },
+      {
+        "epoch": 12,
+        "train_loss": 0.014699805781245232,
+        "triplet_loss": 0.08311610468626023,
+        "teacher_embedding_loss": 0.007097994820773602,
+        "recall_at_1": 0.82
+      },
+      {
+        "epoch": 13,
+        "train_loss": 0.014411535030603408,
+        "triplet_loss": 0.08225719707608223,
+        "teacher_embedding_loss": 0.006873128119111061,
+        "recall_at_1": 0.826
+      },
+      {
+        "epoch": 14,
+        "train_loss": 0.01403600043207407,
+        "triplet_loss": 0.0790713457584381,
+        "teacher_embedding_loss": 0.0068098509289324285,
+        "recall_at_1": 0.824
+      },
+      {
+        "epoch": 15,
+        "train_loss": 0.013806223434209824,
+        "triplet_loss": 0.07820903393626213,
+        "teacher_embedding_loss": 0.006650355662405491,
+        "recall_at_1": 0.8105
+      },
+      {
+        "epoch": 16,
+        "train_loss": 0.01317931249961257,
+        "triplet_loss": 0.07323847323060036,
+        "teacher_embedding_loss": 0.0065060724191367625,
+        "recall_at_1": 0.826
+      },
+      {
+        "epoch": 17,
+        "train_loss": 0.012914308463037014,
+        "triplet_loss": 0.0704541533112526,
+        "teacher_embedding_loss": 0.006520992344617844,
+        "recall_at_1": 0.8195
+      },
+      {
+        "epoch": 18,
+        "train_loss": 0.012680472967028619,
+        "triplet_loss": 0.06907831333875657,
+        "teacher_embedding_loss": 0.006414046280086041,
+        "recall_at_1": 0.822
+      },
+      {
+        "epoch": 19,
+        "train_loss": 0.012246607060730457,
+        "triplet_loss": 0.06583740966320038,
+        "teacher_embedding_loss": 0.006292073423415422,
+        "recall_at_1": 0.822
+      },
+      {
+        "epoch": 20,
+        "train_loss": 0.011819438672065734,
+        "triplet_loss": 0.06282893046140671,
+        "teacher_embedding_loss": 0.006151717326790094,
+        "recall_at_1": 0.8285
+      }
+    ]
+  }
+]

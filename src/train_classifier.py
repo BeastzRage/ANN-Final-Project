@@ -3,6 +3,7 @@ Part A: train and compare the two provided classification backbones.
 """
 
 import csv
+import copy
 import json
 import random
 from pathlib import Path
@@ -18,7 +19,7 @@ from data import get_classification_dataloaders
 from models import build_model
 
 EPOCHS = 20
-LEARNING_RATE = 0.001
+LEARNING_RATES = [0.02] # best values found after testing [0.001, 0.005, 0.01, 0.02, 0.03]
 OUTPUT_DIR = Path("results")
 CHECKPOINT_DIR = Path("checkpoints")
 
@@ -97,6 +98,7 @@ def evaluate(model: nn.Module, data_loader: torch.utils.data.DataLoader, criteri
 
 def train_model(
     model_name: str,
+    learning_rate: float,
     train_loader: torch.utils.data.DataLoader,
     val_loader: torch.utils.data.DataLoader,
     test_loader: torch.utils.data.DataLoader,
@@ -104,14 +106,15 @@ def train_model(
 ) -> dict:
     model = build_model(model_name).to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-    print(f"\nTraining {model_name}")
+    print(f"\nTraining {model_name} with learning rate {learning_rate}")
     print(f"Parameters: {count_parameters(model):,}")
     print(f"FLOPs for one 28x28 input: {count_flops(model, device):,}")
 
     best_val_accuracy = 0.0
-    best_checkpoint = CHECKPOINT_DIR / f"part_a_{model_name}.pt"
+    best_epoch = 0
+    best_state = copy.deepcopy(model.state_dict())
 
     history = []
     for epoch in range(1, EPOCHS + 1):
@@ -137,33 +140,42 @@ def train_model(
 
         if val_accuracy > best_val_accuracy:
             best_val_accuracy = val_accuracy
-            torch.save(
-                {
-                    "model_name": model_name,
-                    "model_state_dict": model.state_dict(),
-                    "val_accuracy": val_accuracy,
-                    "epoch": epoch,
-                },
-                best_checkpoint,
-            )
+            best_epoch = epoch
+            best_state = copy.deepcopy(model.state_dict())
 
-    checkpoint = torch.load(best_checkpoint, map_location=device)
-    model.load_state_dict(checkpoint["model_state_dict"])
+    model.load_state_dict(best_state)
     test_loss, test_accuracy, test_macro_f1 = evaluate(model, test_loader, criterion, device)
 
     result = {
         "model": model_name,
-        "best_epoch": checkpoint["epoch"],
-        "best_val_accuracy": checkpoint["val_accuracy"],
+        "learning_rate": learning_rate,
+        "best_epoch": best_epoch,
+        "best_val_accuracy": best_val_accuracy,
         "test_loss": test_loss,
         "test_accuracy": test_accuracy,
         "test_macro_f1": test_macro_f1,
         "parameters": count_parameters(model),
         "flops": count_flops(model, device),
-        "checkpoint": str(best_checkpoint),
+        "checkpoint": "",
+        "model_state_dict": best_state,
         "history": history,
     }
     return result
+
+
+def save_best_checkpoint(best_result: dict) -> None:
+    checkpoint_path = CHECKPOINT_DIR / f"part_a_{best_result['model']}.pt"
+    torch.save(
+        {
+            "model_name": best_result["model"],
+            "learning_rate": best_result["learning_rate"],
+            "model_state_dict": best_result["model_state_dict"],
+            "val_accuracy": best_result["best_val_accuracy"],
+            "epoch": best_result["best_epoch"],
+        },
+        checkpoint_path,
+    )
+    best_result["checkpoint"] = str(checkpoint_path)
 
 
 def save_results(results: list[dict], output_dir: Path) -> None:
@@ -172,11 +184,18 @@ def save_results(results: list[dict], output_dir: Path) -> None:
     json_path = output_dir / "part_a_results.json"
     csv_path = output_dir / "part_a_results.csv"
 
+    results_for_json = []
+    for result in results:
+        result_copy = result.copy()
+        result_copy.pop("model_state_dict")
+        results_for_json.append(result_copy)
+
     with json_path.open("w", encoding="utf-8") as file:
-        json.dump(results, file, indent=2)
+        json.dump(results_for_json, file, indent=2)
 
     columns = [
         "model",
+        "learning_rate",
         "best_epoch",
         "best_val_accuracy",
         "test_accuracy",
@@ -205,14 +224,18 @@ def main() -> None:
     train_loader, val_loader, test_loader = get_classification_dataloaders(batch_size=CLASSIFICATION_BATCH_SIZE)
 
     results = []
-    for model_name in PART_A_MODELS:
-        result = train_model(model_name, train_loader, val_loader, test_loader, device)
-        results.append(result)
-
-    save_results(results, OUTPUT_DIR)
+    for learning_rate in LEARNING_RATES:
+        for model_name in PART_A_MODELS:
+            result = train_model(model_name, learning_rate, train_loader, val_loader, test_loader, device)
+            results.append(result)
 
     selected = max(results, key=lambda item: item["best_val_accuracy"])
+    save_best_checkpoint(selected)
     print(f"\nSuggested Part A backbone for Part B: {selected['model']}")
+    print(f"Best learning rate for that run: {selected['learning_rate']}")
+    print(f"Saved best Part A checkpoint to {selected['checkpoint']}")
+
+    save_results(results, OUTPUT_DIR)
 
 
 if __name__ == "__main__":

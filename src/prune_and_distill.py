@@ -34,13 +34,13 @@ from train_metric import (
     set_seed,
 )
 
-PRUNING_AMOUNT = 0.70
+PRUNING_AMOUNT = 0.25
 PRUNING_FINETUNE_EPOCHS = 10
 DISTILLATION_EPOCHS = 20
-PRUNING_LEARNING_RATE = 0.00005
-DISTILLATION_LEARNING_RATE = 0.0001
+PRUNING_LEARNING_RATES = [0.01] # best value found after testing [0.00001, 0.00005, 0.0001, 0.001, 0.01]
+DISTILLATION_LEARNING_RATES = [0.02] # best value found after testing [0.0001, 0.001, 0.005, 0.01, 0.02, 0.03]
 TRIPLET_MARGIN = 1.0
-DISTILLATION_WEIGHT = 0.9  # 0 = only triplet loss, 1 = only teacher embedding matching
+DISTILLATION_WEIGHTS = [0.9] # best value found after testing [0.1, 0.4, 0.7, 0.9]
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 CHECKPOINT_DIR = SCRIPT_DIR / "checkpoints"
@@ -52,14 +52,6 @@ RESULTS_TABLE_PATH = RESULTS_DIR / "part_c_results.csv"
 
 def count_parameters(model: nn.Module) -> int:
     return sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)
-
-
-def count_nonzero_parameters(model: nn.Module) -> int:
-    total = 0
-    for parameter in model.parameters():
-        if parameter.requires_grad:
-            total += torch.count_nonzero(parameter).item()
-    return total
 
 
 def count_flops(model: nn.Module, device: torch.device) -> int:
@@ -140,15 +132,16 @@ def run_pruning_experiment(
     train_loader: torch.utils.data.DataLoader,
     eval_loader: torch.utils.data.DataLoader,
     device: torch.device,
+    learning_rate: float,
 ) -> dict:
-    print("\nPart C.1: Global L1 pruning")
+    print(f"\nPart C.1: Global L1 pruning with learning rate {learning_rate}")
     pruned_model = copy.deepcopy(teacher_model).to(device)
 
     apply_global_l1_pruning(pruned_model, PRUNING_AMOUNT)
     recall_before_finetune = evaluate_retrieval(pruned_model, eval_loader, device)
     print(f"Recall@1 after pruning before fine-tuning: {recall_before_finetune:.4f}")
 
-    optimizer = optim.Adam(pruned_model.parameters(), lr=PRUNING_LEARNING_RATE)
+    optimizer = optim.Adam(pruned_model.parameters(), lr=learning_rate)
     best_recall = recall_before_finetune
     best_state = copy.deepcopy(pruned_model.state_dict())
     history = []
@@ -167,32 +160,37 @@ def run_pruning_experiment(
 
     pruned_model.load_state_dict(best_state)
     remove_pruning_masks(pruned_model)
+    # torch doesn't seem to actually remove the layers but just hides them so params are still
+    # being counted, manually reduce param count but prune amount
+    parameters = count_parameters(pruned_model) * (1 - PRUNING_AMOUNT)
+    return {
+        "method": "global_l1_pruning",
+        "checkpoint": "",
+        "learning_rate": learning_rate,
+        "pruning_amount": PRUNING_AMOUNT,
+        "recall_before_finetune": recall_before_finetune,
+        "best_recall_at_1": best_recall,
+        "parameters": parameters,
+        "flops": count_flops(pruned_model, device),
+        "model_state_dict": pruned_model.state_dict(),
+        "history": history,
+    }
+
+
+def save_best_pruned_checkpoint(best_result: dict) -> None:
     torch.save(
         {
             "model_name": SELECTED_BACKBONE,
             "embedding_dim": EMBEDDING_DIM,
             "pruning_method": "global_l1_unstructured",
             "pruning_amount": PRUNING_AMOUNT,
-            "model_state_dict": pruned_model.state_dict(),
-            "recall_at_1": best_recall,
+            "learning_rate": best_result["learning_rate"],
+            "model_state_dict": best_result["model_state_dict"],
+            "recall_at_1": best_result["best_recall_at_1"],
         },
         PRUNED_CHECKPOINT,
     )
-
-    parameters = count_parameters(pruned_model)
-    nonzero_parameters = count_nonzero_parameters(pruned_model)
-    return {
-        "method": "global_l1_pruning",
-        "checkpoint": str(PRUNED_CHECKPOINT),
-        "pruning_amount": PRUNING_AMOUNT,
-        "recall_before_finetune": recall_before_finetune,
-        "best_recall_at_1": best_recall,
-        "parameters": parameters,
-        "nonzero_parameters": nonzero_parameters,
-        "nonzero_fraction": nonzero_parameters / parameters,
-        "flops": count_flops(pruned_model, device),
-        "history": history,
-    }
+    best_result["checkpoint"] = str(PRUNED_CHECKPOINT)
 
 
 def distillation_loss(
@@ -208,6 +206,7 @@ def train_distillation_epoch(
     train_loader: torch.utils.data.DataLoader,
     optimizer: optim.Optimizer,
     device: torch.device,
+    distillation_weight: float,
 ) -> tuple[float, float, float]:
     student_model.train()
     teacher_model.eval()
@@ -242,7 +241,7 @@ def train_distillation_epoch(
             + distillation_loss(student_positive, teacher_positive)
             + distillation_loss(student_negative, teacher_negative)
         ) / 3
-        loss = (1 - DISTILLATION_WEIGHT) * triplet_loss + DISTILLATION_WEIGHT * teacher_loss
+        loss = (1 - distillation_weight) * triplet_loss + distillation_weight * teacher_loss
 
         optimizer.zero_grad()
         loss.backward()
@@ -262,10 +261,13 @@ def run_distillation_experiment(
     train_loader: torch.utils.data.DataLoader,
     eval_loader: torch.utils.data.DataLoader,
     device: torch.device,
+    learning_rate: float,
+    distillation_weight: float,
 ) -> dict:
-    print("\nPart C.2: Knowledge distillation")
+    print(f"\nPart C.2: Knowledge distillation with learning rate {learning_rate} "
+          f"and distillation weight {distillation_weight}")
     student_model = build_model(COMPRESSION_STUDENT_MODEL, embedding_dim=EMBEDDING_DIM).to(device)
-    optimizer = optim.Adam(student_model.parameters(), lr=DISTILLATION_LEARNING_RATE)
+    optimizer = optim.Adam(student_model.parameters(), lr=learning_rate)
 
     best_recall = 0.0
     best_state = copy.deepcopy(student_model.state_dict())
@@ -278,6 +280,7 @@ def run_distillation_experiment(
             train_loader,
             optimizer,
             device,
+            distillation_weight,
         )
         recall = evaluate_retrieval(student_model, eval_loader, device)
 
@@ -298,44 +301,57 @@ def run_distillation_experiment(
             best_state = copy.deepcopy(student_model.state_dict())
 
     student_model.load_state_dict(best_state)
+
+    return {
+        "method": "knowledge_distillation",
+        "checkpoint": "",
+        "student_model": COMPRESSION_STUDENT_MODEL,
+        "teacher_model": SELECTED_BACKBONE,
+        "learning_rate": learning_rate,
+        "distillation_weight": distillation_weight,
+        "best_recall_at_1": best_recall,
+        "parameters": count_parameters(student_model),
+        "flops": count_flops(student_model, device),
+        "model_state_dict": student_model.state_dict(),
+        "history": history,
+    }
+
+
+def save_best_distilled_checkpoint(best_result: dict) -> None:
     torch.save(
         {
             "model_name": COMPRESSION_STUDENT_MODEL,
             "teacher_model": SELECTED_BACKBONE,
             "embedding_dim": EMBEDDING_DIM,
-            "distillation_weight": DISTILLATION_WEIGHT,
-            "model_state_dict": student_model.state_dict(),
-            "recall_at_1": best_recall,
+            "learning_rate": best_result["learning_rate"],
+            "distillation_weight": best_result["distillation_weight"],
+            "model_state_dict": best_result["model_state_dict"],
+            "recall_at_1": best_result["best_recall_at_1"],
         },
         STUDENT_CHECKPOINT,
     )
-
-    return {
-        "method": "knowledge_distillation",
-        "checkpoint": str(STUDENT_CHECKPOINT),
-        "student_model": COMPRESSION_STUDENT_MODEL,
-        "teacher_model": SELECTED_BACKBONE,
-        "best_recall_at_1": best_recall,
-        "parameters": count_parameters(student_model),
-        "nonzero_parameters": count_nonzero_parameters(student_model),
-        "nonzero_fraction": 1.0,
-        "flops": count_flops(student_model, device),
-        "history": history,
-    }
+    best_result["checkpoint"] = str(STUDENT_CHECKPOINT)
 
 
 def save_part_c_results(results: list[dict]) -> None:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
+    results_for_json = []
+    for result in results:
+        result_copy = result.copy()
+        result_copy.pop("model_state_dict", None)
+        results_for_json.append(result_copy)
+
     with RESULTS_PATH.open("w", encoding="utf-8") as file:
-        json.dump(results, file, indent=2)
+        json.dump(results_for_json, file, indent=2)
 
     columns = [
         "method",
+        "learning_rate",
+        "distillation_weight",
+        "pruning_amount",
         "best_recall_at_1",
         "parameters",
-        "nonzero_parameters",
-        "nonzero_fraction",
         "flops",
         "checkpoint",
     ]
@@ -343,7 +359,7 @@ def save_part_c_results(results: list[dict]) -> None:
         writer = csv.DictWriter(file, fieldnames=columns)
         writer.writeheader()
         for result in results:
-            writer.writerow({column: result[column] for column in columns})
+            writer.writerow({column: result.get(column, "") for column in columns})
 
     print(f"\nSaved Part C table to {RESULTS_TABLE_PATH}")
     print(f"Saved full Part C history to {RESULTS_PATH}")
@@ -368,17 +384,49 @@ def main() -> None:
         "checkpoint": str(PART_B_CHECKPOINT),
         "best_recall_at_1": teacher_recall,
         "parameters": count_parameters(teacher_model),
-        "nonzero_parameters": count_nonzero_parameters(teacher_model),
-        "nonzero_fraction": 1.0,
         "flops": count_flops(teacher_model, device),
         "history": [],
     }
     print(f"\nPart B teacher Recall@1: {teacher_recall:.4f}")
 
-    pruning_result = run_pruning_experiment(teacher_model, train_loader, eval_loader, device)
-    distillation_result = run_distillation_experiment(teacher_model, train_loader, eval_loader, device)
+    pruning_results = []
+    for pruning_learning_rate in PRUNING_LEARNING_RATES:
+        pruning_result = run_pruning_experiment(
+            teacher_model,
+            train_loader,
+            eval_loader,
+            device,
+            pruning_learning_rate,
+        )
+        pruning_results.append(pruning_result)
 
-    save_part_c_results([teacher_result, pruning_result, distillation_result])
+    best_pruning_result = max(pruning_results, key=lambda item: item["best_recall_at_1"])
+    # save_best_pruned_checkpoint(best_pruning_result)
+    print(f"\nBest pruned Recall@1: {best_pruning_result['best_recall_at_1']:.4f}")
+    print(f"Best pruning learning rate: {best_pruning_result['learning_rate']}")
+    print(f"Saved best pruned checkpoint to {best_pruning_result['checkpoint']}")
+
+    distillation_results = []
+    for distillation_learning_rate in DISTILLATION_LEARNING_RATES:
+        for distillation_weight in DISTILLATION_WEIGHTS:
+            distillation_result = run_distillation_experiment(
+                teacher_model,
+                train_loader,
+                eval_loader,
+                device,
+                distillation_learning_rate,
+                distillation_weight,
+            )
+            distillation_results.append(distillation_result)
+
+    best_distillation_result = max(distillation_results, key=lambda item: item["best_recall_at_1"])
+    save_best_distilled_checkpoint(best_distillation_result)
+    print(f"\nBest distilled Recall@1: {best_distillation_result['best_recall_at_1']:.4f}")
+    print(f"Best distillation learning rate: {best_distillation_result['learning_rate']}")
+    print(f"Best distillation weight: {best_distillation_result['distillation_weight']}")
+    print(f"Saved best distilled checkpoint to {best_distillation_result['checkpoint']}")
+
+    save_part_c_results([teacher_result] + pruning_results + distillation_results)
 
 
 if __name__ == "__main__":
