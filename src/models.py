@@ -67,9 +67,6 @@ class DepthwiseSeparableBlock(nn.Module):
 
     def __init__(self, in_channels: int, out_channels: int, stride: int = 1) -> None:
         super().__init__()
-        # Reuses the depthwise + pointwise convolution idea from
-        # Practicals solutions/CNN_Part2_solution.ipynb, with the BatchNorm
-        # layers required by the assignment scaffold.
         self.block = nn.Sequential(
             nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=stride, padding=1, groups=in_channels, bias=False),
             nn.BatchNorm2d(in_channels),

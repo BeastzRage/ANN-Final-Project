@@ -1,8 +1,5 @@
 """
 Part B embedding-space visualization with t-SNE.
-
-Notebook code reused:
-- t-SNE visualization idea: Practicals solutions/deep_learning_optimization_solution.ipynb.
 """
 
 import matplotlib.pyplot as plt
@@ -11,7 +8,6 @@ from sklearn.manifold import TSNE
 
 from data import get_retrieval_eval_dataloader
 from train_metric import (
-    SEED,
     EMBEDDING_DIM,
     PART_B_CHECKPOINT,
     RESULTS_DIR,

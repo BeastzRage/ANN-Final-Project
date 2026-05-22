@@ -1,13 +1,5 @@
 """
 Part C: prune and distill the Part B retrieval model.
-
-Notebook code reused:
-- Global L1 pruning pattern: Practicals solutions/main_solution.ipynb.
-- Knowledge-distillation training pattern: Practicals solutions/main_solution.ipynb.
-- Triplet retrieval training/evaluation style: src/train_metric.py and
-  Practicals solutions/deep_learning_optimization_solution.ipynb.
-
-Run this file from PyCharm after Part B has produced its retrieval checkpoint.
 """
 
 import copy

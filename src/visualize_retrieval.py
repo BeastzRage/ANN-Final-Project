@@ -1,13 +1,6 @@
 """
 Part B retrieval visualization.
-
-Notebook code reused:
-- Embedding/retrieval idea: Practicals solutions/deep_learning_optimization_solution.ipynb.
-- Plot-saving style: Practicals solutions/CNN_solution.ipynb.
 """
-
-from pathlib import Path
-
 import matplotlib.pyplot as plt
 import torch
 

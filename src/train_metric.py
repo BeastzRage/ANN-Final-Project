@@ -18,7 +18,7 @@ from losses import normalize_embeddings, triplet_margin_loss
 from models import build_model
 
 SELECTED_BACKBONE = "separable_cnn"
-EMBEDDING_DIM = 32
+EMBEDDING_DIM = 32 # best value found after testing 8, 16, 32 ,64, 128, 256
 EPOCHS = 20
 LEARNING_RATES = [0.001] # best value found after testing [0.001, 0.005,0.01, 0.02, 0.03, 0.04, 0.05]
 TRIPLET_MARGIN = 1.0
